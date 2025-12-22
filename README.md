@@ -4,6 +4,8 @@
 
 This project is a lightweight intrusion detection framework that analyzes system and network logs to identify malicious behavior. Instead of inspecting payloads or using machine learning, the system focuses on **modeling attacker behavior over time** using interpretable rules.
 
+I built it after countless CTF weekends where I kept wishing for tooling that could tell the story behind the flood of logs instead of just spitting out raw indicators. The framework became a way to capture that investigator mindset and apply it to real-world telemetry.
+
 The project was built as an exploration of how intrusion detection systems work in practice, especially when dealing with noisy and incomplete data.
 
 The framework detects three types of attacks:
@@ -198,6 +200,8 @@ python log_analyzer.py --help
 ## Motivation
 
 This project was built to better understand how intrusion detection systems reason about behavior when working with imperfect data. Throughout the project, the focus was on making design decisions explicit, testing assumptions against real traffic, and prioritizing interpretability over complexity.
+
+It also reflects lessons from years of playing CTFs: the best teams win by spotting behavioral patterns quickly, not by throwing heavyweight tooling at the problem. Translating that mindset into an analyst-friendly pipeline was the driving force behind every design choice here.
 
 ---
 

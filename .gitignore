@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+test.py
+
+# Data
+data/raw/
+data/logs/
+
+# OS
+.DS_Store

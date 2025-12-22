@@ -2,31 +2,34 @@
 
 ## Overview
 
-This project implements a lightweight, explainable intrusion detection framework that identifies malicious behavior from system and network logs. Rather than relying on payload inspection or black-box machine learning, the system models **attacker behavior over time** using interpretable rules applied to structured log events.
+This project is a lightweight intrusion detection framework that analyzes system and network logs to identify malicious behavior. Instead of inspecting payloads or using machine learning, the system focuses on **modeling attacker behavior over time** using interpretable rules.
 
-The framework detects three common attack behaviors:
+The project was built as an exploration of how intrusion detection systems work in practice, especially when dealing with noisy and incomplete data.
+
+The framework detects three types of attacks:
+
 - Web brute force attacks
 - Web scanning activity
 - SSH brute force attacks
 
-The goal of this project is not to build a production SIEM, but to explore how heterogeneous logs can be normalized into a unified event model and analyzed using transparent detection logic.
+This is not intended to be a production SIEM, but a research-style prototype that emphasizes clarity and correctness.
 
 ---
 
 ## Data Sources
 
-This project uses publicly available network traffic from the **CIC-IDS2017** dataset.
+This project uses public network traffic from the **CIC-IDS2017** dataset.
 
 - **Friday traffic** is used for web-based attacks
-- **Thursday traffic** is used for SSH brute force behavior
+- **Thursday traffic** is used for SSH brute force attacks
 
-Raw PCAP files are processed using the **Zeek** network analysis framework to extract structured logs. No raw PCAPs or logs are committed to this repository.
+Raw PCAP files are processed using the **Zeek** network analysis framework to generate structured logs. Raw PCAPs and logs are intentionally not committed to this repository.
 
 ---
 
-## Event Abstraction
+## Event Model
 
-All log entries are mapped into a unified `Event` abstraction with the following fields:
+All log entries are normalized into a unified `Event` abstraction with the following fields:
 
 - `timestamp`
 - `source_ip`
@@ -38,7 +41,7 @@ All log entries are mapped into a unified `Event` abstraction with the following
 - `success`
 - `bytes`
 
-This abstraction allows different protocols (HTTP and SSH) to be analyzed using a common temporal and behavioral model.
+This abstraction allows HTTP and SSH activity to be analyzed using the same temporal model.
 
 ---
 
@@ -49,45 +52,48 @@ Events are grouped into fixed-size time windows (60 seconds) per source IP. Dete
 ### Web Brute Force Detection
 
 Web brute force attacks are detected based on **request concentration**:
-- A high number of HTTP requests
+
+- A large number of HTTP requests
 - Targeting a small number of resources
 - Within a short time window
 
-This approach was chosen after observing that HTTP status codes alone were unreliable indicators of authentication failure in real traffic.
+This approach was chosen after observing that HTTP status codes alone were unreliable indicators of failed authentication in real traffic.
 
 ---
 
 ### Web Scanning Detection
 
-Web scanning activity is detected based on **resource diversity**:
+Web scanning behavior is detected based on **resource diversity**:
+
 - A high number of distinct URLs
 - Within a short time window
 - Originating from a single source IP
 
-This behavior is distinct from brute force attacks, which typically focus on a small set of endpoints.
+This behavior is distinct from brute force attacks, which usually focus on a small number of endpoints.
 
 ---
 
 ### SSH Brute Force Detection
 
-SSH brute force attacks are detected using connection-level behavior:
+SSH brute force attacks are detected using connection-level metadata:
+
 - Repeated SSH connection attempts
 - Low success ratio
-- Short-lived or low-byte sessions
+- Short-lived or low-byte connections
 
-Authentication success is inferred from connection metadata rather than payload inspection.
+Authentication success is inferred from connection behavior rather than payload inspection.
 
 ---
 
 ## Results
 
-Using conservative, interpretable thresholds, the system detected:
+Using conservative and explainable thresholds, the system detected:
 
 - 32 web brute force windows
 - Web scanning activity across multiple windows
 - 4 SSH brute force windows
 
-These results reflect high-confidence attack clusters rather than exhaustive detection.
+These detections represent high-confidence attack clusters rather than exhaustive detection.
 
 ---
 
@@ -96,17 +102,17 @@ These results reflect high-confidence attack clusters rather than exhaustive det
 - SSH authentication success is inferred indirectly
 - Encrypted payloads are not inspected
 - Detection thresholds are dataset-specific
-- This system is designed for offline analysis, not real-time deployment
+- The system is designed for offline analysis only
 
-These limitations are acknowledged and documented as part of the design.
+These limitations are acknowledged as part of the design.
 
 ---
 
 ## Ethical Considerations
 
-This project is intended solely for educational and defensive security research.
+This project is intended for educational and defensive security research only.
 
-- All data sources are public
+- All datasets are publicly available
 - No live systems are scanned
 - No personally identifiable information is intentionally collected
 - Results are reported in aggregate form
@@ -115,19 +121,83 @@ This project is intended solely for educational and defensive security research.
 
 ## Project Structure
 
-src/.  
-├── models/ # Event abstraction.  
-├── parsers/ # Log parsers (HTTP, SSH)  
-├── pipeline/ # Event normalization   
-├── detection/ # Detection logic.  
-docs/ # Design and schema documentation. 
+```
+src/
+├── models/ # Event abstraction
+├── parsers/ # Log parsers (HTTP and SSH)
+├── pipeline/ # Event normalization
+├── detection/ # Detection logic
+docs/ # Design and schema documentation
+```
 
+---
+
+## Command-Line Usage
+
+This project includes a single command-line interface that allows users to run all detection pipelines without interacting directly with the codebase.
+
+The CLI script is located in the project root:
+
+```
+log_analyzer.py
+```
+
+All commands should be run from the root directory of the repository.
+
+---
+
+### Web Attack Detection
+
+To run detection for web brute force and web scanning activity using the default Friday dataset:
+
+```bash
+python log_analyzer.py web
+```
+
+Optional arguments:
+
+- `--http-log` : Path to Zeek http.log
+- `--conn-log` : Path to Zeek conn.log
+- `--window` : Time window size in seconds (default: 60)
+
+Example:
+
+```bash
+python log_analyzer.py web --window 120
+```
+
+### SSH Brute Force Detection
+
+To run SSH brute force detection using the default Thursday dataset:
+
+```bash
+python log_analyzer.py ssh
+```
+
+Optional arguments:
+
+- `--conn-log` : Path to Zeek conn.log
+- `--window` : Time window size in seconds (default: 60)
+
+Example:
+
+```bash
+python log_analyzer.py ssh --window 120
+```
+
+### Help
+
+To view all available commands and options:
+
+```bash
+python log_analyzer.py --help
+```
 
 ---
 
 ## Motivation
 
-This project was built to explore how intrusion detection systems reason about behavior under real-world constraints, including noisy data, incomplete signals, and the tradeoff between precision and recall. The emphasis throughout the project is on **clarity, correctness, and explainability** rather than scale or automation.
+This project was built to better understand how intrusion detection systems reason about behavior when working with imperfect data. Throughout the project, the focus was on making design decisions explicit, testing assumptions against real traffic, and prioritizing interpretability over complexity.
 
 ---
 

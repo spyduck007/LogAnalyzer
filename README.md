@@ -16,6 +16,7 @@ The framework detects three types of attacks:
 
 This is not intended to be a production SIEM, but a research-style prototype that emphasizes clarity and correctness.
 
+Demo:
 [![Watch the demo](https://img.youtube.com/vi/9YzAtchUyn8/maxresdefault.jpg)](https://youtu.be/9YzAtchUyn8)
 
 ---

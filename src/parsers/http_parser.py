@@ -8,13 +8,11 @@ def parse_http_log(filepath: str) -> List[Event]:
 
     with open(filepath, "r") as f:
         for line in f:
-            # Capture field indices from Zeek header
             if line.startswith("#fields"):
                 headers = line.strip().split("\t")[1:]
                 field_index = {name: i for i, name in enumerate(headers)}
                 continue
 
-            # Skip other metadata
             if line.startswith("#"):
                 continue
 
@@ -59,7 +57,6 @@ def parse_http_log(filepath: str) -> List[Event]:
                 events.append(event)
 
             except KeyError:
-                # Required field missing
                 continue
 
     return events

@@ -1,210 +1,93 @@
-# Lightweight Log-Based Intrusion Detection Framework
+# LogAnalyzer
 
-## Overview
+[Demo Video](https://youtu.be/9YzAtchUyn8)
 
-This project is a lightweight intrusion detection framework that analyzes system and network logs to identify malicious behavior. Instead of inspecting payloads or using machine learning, the system focuses on **modeling attacker behavior over time** using interpretable rules.
+## What is the problem?
 
-I built it after countless CTF weekends where I kept wishing for tooling that could tell the story behind the flood of logs instead of just spitting out raw indicators. The framework became a way to capture that investigator mindset and apply it to real-world telemetry.
+Security logs are often noisy, voluminous, and difficult to interpret. Analysts need tools that can tell the story behind the logs rather than just flagging individual events. This project addresses the challenge of detecting malicious behavior in network traffic without relying on payload inspection or complex machine learning models.
 
-The project was built as an exploration of how intrusion detection systems work in practice, especially when dealing with noisy and incomplete data.
+## What does it do?
 
-The framework detects three types of attacks:
+LogAnalyzer is a lightweight intrusion detection framework that models attacker behavior over time. It parses Zeek logs (`http.log` and `conn.log`) and detects:
 
-- Web brute force attacks
-- Web scanning activity
-- SSH brute force attacks
+- **Web Brute Force:** High volume of requests to few resources.
+- **Web Scanning:** Requests to many distinct URLs.
+- **SSH Brute Force:** Repeated failed connection attempts.
 
-This is not intended to be a production SIEM, but a research-style prototype that emphasizes clarity and correctness.
+It normalizes events into a unified format and applies time-windowed behavioral rules to identify attacks.
 
----
+## How do I run it?
 
-## Data Sources
+### Installation
 
-This project uses public network traffic from the **CIC-IDS2017** dataset.
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/spyduck007/LogAnalyzer.git
+    cd LogAnalyzer
+    ```
+2.  Ensure you have Python 3 installed.
+3.  (Optional) Create a virtual environment:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
 
-- **Friday traffic** is used for web-based attacks
-- **Thursday traffic** is used for SSH brute force attacks
+### Usage
 
-Raw PCAP files are processed using the **Zeek** network analysis framework to generate structured logs. Raw PCAPs and logs are intentionally not committed to this repository.
+The main entry point is `log_analyzer.py`.
 
----
-
-## Event Model
-
-All log entries are normalized into a unified `Event` abstraction with the following fields:
-
-- `timestamp`
-- `source_ip`
-- `dest_ip`
-- `protocol`
-- `service`
-- `action`
-- `resource`
-- `success`
-- `bytes`
-
-This abstraction allows HTTP and SSH activity to be analyzed using the same temporal model.
-
----
-
-## Detection Approach
-
-Events are grouped into fixed-size time windows (60 seconds) per source IP. Detection logic operates on these windows rather than on individual events.
-
-### Web Brute Force Detection
-
-Web brute force attacks are detected based on **request concentration**:
-
-- A large number of HTTP requests
-- Targeting a small number of resources
-- Within a short time window
-
-This approach was chosen after observing that HTTP status codes alone were unreliable indicators of failed authentication in real traffic.
-
----
-
-### Web Scanning Detection
-
-Web scanning behavior is detected based on **resource diversity**:
-
-- A high number of distinct URLs
-- Within a short time window
-- Originating from a single source IP
-
-This behavior is distinct from brute force attacks, which usually focus on a small number of endpoints.
-
----
-
-### SSH Brute Force Detection
-
-SSH brute force attacks are detected using connection-level metadata:
-
-- Repeated SSH connection attempts
-- Low success ratio
-- Short-lived or low-byte connections
-
-Authentication success is inferred from connection behavior rather than payload inspection.
-
----
-
-## Results
-
-Using conservative and explainable thresholds, the system detected:
-
-- 32 web brute force windows
-- Web scanning activity across multiple windows
-- 4 SSH brute force windows
-
-These detections represent high-confidence attack clusters rather than exhaustive detection.
-
----
-
-## Limitations
-
-- SSH authentication success is inferred indirectly
-- Encrypted payloads are not inspected
-- Detection thresholds are dataset-specific
-- The system is designed for offline analysis only
-
-These limitations are acknowledged as part of the design.
-
----
-
-## Ethical Considerations
-
-This project is intended for educational and defensive security research only.
-
-- All datasets are publicly available
-- No live systems are scanned
-- No personally identifiable information is intentionally collected
-- Results are reported in aggregate form
-
----
-
-## Project Structure
-
-```
-src/
-├── models/ # Event abstraction
-├── parsers/ # Log parsers (HTTP and SSH)
-├── pipeline/ # Event normalization
-├── detection/ # Detection logic
-docs/ # Design and schema documentation
-```
-
----
-
-## Command-Line Usage
-
-This project includes a single command-line interface that allows users to run all detection pipelines without interacting directly with the codebase.
-
-The CLI script is located in the project root:
-
-```
-log_analyzer.py
-```
-
-All commands should be run from the root directory of the repository.
-
----
-
-### Web Attack Detection
-
-To run detection for web brute force and web scanning activity using the default Friday dataset:
+**Web Detection:**
 
 ```bash
-python log_analyzer.py web
+python log_analyzer.py web --http-log data/logs/friday/http.log --conn-log data/logs/friday/conn.log
 ```
 
-Optional arguments:
-
-- `--http-log` : Path to Zeek http.log
-- `--conn-log` : Path to Zeek conn.log
-- `--window` : Time window size in seconds (default: 60)
-
-Example:
+**SSH Detection:**
 
 ```bash
-python log_analyzer.py web --window 120
+python log_analyzer.py ssh --conn-log data/logs/thursday/conn.log
 ```
 
-### SSH Brute Force Detection
+### Sample Output
 
-To run SSH brute force detection using the default Thursday dataset:
+When you run the tool, it outputs a summary of detected attack windows:
 
-```bash
-python log_analyzer.py ssh
+```text
+=== Web Detection Results ===
+Time window: 60 seconds
+Web brute force windows: 32
+Web scanning windows:    267
+
+=== SSH Detection Results ===
+Time window: 60 seconds
+SSH brute force windows: 4
 ```
 
-Optional arguments:
+### Code Snippet
 
-- `--conn-log` : Path to Zeek conn.log
-- `--window` : Time window size in seconds (default: 60)
+The core event model allows for unified analysis:
 
-Example:
-
-```bash
-python log_analyzer.py ssh --window 120
+```python
+@dataclass
+class Event:
+    timestamp: float
+    source_ip: str
+    dest_ip: str
+    protocol: str
+    service: str
+    action: str
+    resource: Optional[str]
+    success: Optional[bool]
+    bytes: Optional[int]
 ```
 
-### Help
+For more details, check the `docs/` folder.
 
-To view all available commands and options:
+## Limitations & Considerations
 
-```bash
-python log_analyzer.py --help
-```
+This tool is a research prototype designed for educational purposes and offline analysis.
 
----
-
-## Motivation
-
-This project was built to better understand how intrusion detection systems reason about behavior when working with imperfect data. Throughout the project, the focus was on making design decisions explicit, testing assumptions against real traffic, and prioritizing interpretability over complexity.
-
-It also reflects lessons from years of playing CTFs: the best teams win by spotting behavioral patterns quickly, not by throwing heavyweight tooling at the problem. Translating that mindset into an analyst-friendly pipeline was the driving force behind every design choice here.
-
----
-
-## License
-
-This project is released for educational and research purposes.
+- **Inferred Authentication:** SSH success is inferred from connection metadata (bytes, duration), not actual login status.
+- **No Payload Inspection:** It does not decrypt HTTPS or inspect packet payloads, relying solely on behavioral patterns.
+- **Offline Only:** Designed for post-incident analysis of log files, not real-time stream processing.
+- **Dataset Specific:** Thresholds are tuned for the CIC-IDS2017 dataset and may need adjustment for other environments.

@@ -7,10 +7,6 @@ def detect_ssh_bruteforce(
     min_attempts: int = 10,
     max_success_ratio: float = 0.2
 ) -> bool:
-    """
-    Detect SSH brute force based on repeated failed connections.
-    """
-
     ssh_events = [
         e for e in events
         if e.service == "ssh"

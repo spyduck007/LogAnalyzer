@@ -7,10 +7,6 @@ def detect_web_scanning(
     min_requests: int = 30,
     min_unique_resources: int = 20
 ) -> bool:
-    """
-    Detect web scanning based on high resource diversity.
-    """
-
     http_events = [
         e for e in events
         if e.service == "http"

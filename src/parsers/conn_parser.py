@@ -19,7 +19,6 @@ def parse_conn_log(filepath: str) -> List[Event]:
             fields = line.strip().split("\t")
 
             try:
-                # Filter SSH traffic
                 if fields[field_index["id.resp_p"]] != "22":
                     continue
 
@@ -32,7 +31,6 @@ def parse_conn_log(filepath: str) -> List[Event]:
                 orig_bytes = fields[field_index["orig_bytes"]]
                 resp_bytes = fields[field_index["resp_bytes"]]
 
-                # Infer success (heuristic)
                 try:
                     duration_val = float(duration)
                     byte_count = int(orig_bytes) + int(resp_bytes)

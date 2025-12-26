@@ -7,11 +7,6 @@ def detect_web_bruteforce(
     min_requests: int = 20,
     max_unique_resources: int = 2
 ) -> bool:
-    """
-    Detect web brute force attempts based on repeated access
-    to a small set of resources.
-    """
-
     http_events = [
         e for e in events
         if e.service == "http"
@@ -22,5 +17,4 @@ def detect_web_bruteforce(
 
     resources = set(e.resource for e in http_events if e.resource)
 
-    # Many requests, few targets → brute force
     return len(resources) <= max_unique_resources

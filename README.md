@@ -1,6 +1,7 @@
 # LogAnalyzer
 
 [Demo Video](https://youtu.be/9YzAtchUyn8)
+[Technical Paper](TechnicalPaper.pdf)
 
 ## What is the problem?
 

@@ -1,6 +1,7 @@
 # LogAnalyzer
+Lightweight intrusion detection framework based on system logs
 
-[Demo Video](https://youtu.be/9YzAtchUyn8)
+[Demo Video](https://youtu.be/9YzAtchUyn8)  
 [Technical Paper](TechnicalPaper.pdf)
 
 ## What is the problem?
